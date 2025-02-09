@@ -123,7 +123,7 @@ async function getAPIKey() {
 //simplify the text input 
 async function callChatGPT(selectedText, apiKey) {
     const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
-    const prompt = `Simplify this text: Make it less academic and easier to understand for non-academics:\n\n${selectedText}`;
+    const prompt = `Simplify this text: Make it less academic and easier to understand for non-academics, also translate it into English if applicable:\n\n${selectedText}`;
     
     try {
         const response = await fetch(apiUrl, {
