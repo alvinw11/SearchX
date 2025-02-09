@@ -7,24 +7,32 @@
 
 
 <body>
-    <!-- Add API key setup section -->
+    <!-- Add API key setup section
     <div id="api-key-setup">
         <h3>Setup Required</h3>
         <p>Please enter your OpenAI API key to continue:</p>
         <input type="password" id="api-key-input" placeholder="Enter your OpenAI API key">
         <button id="save-api-key">Save API Key</button>
-    </div>
+    </div> -->
 
-    <div id="main-content" style="display: none;">
+    <!-- <div id="main-content" style="display: none;"> -->
 
       <div class="container">
         <!-- Left Column: Template Selection -->
         <div class="left-column">
           <img src="../images/SearchX_icon.png" alt="icon">
           <h3>Templates</h3>
-          <div class="template-item" data-template="scientific">Scientific Articles</div>
-          <div class="template-item" data-template="journal">Journals</div>
-          <div class="template-item" data-template="newspaper">Newspaper</div>
+          <div class="template-buttons">
+            <button class="template-btn" data-template="article">
+                <img src="../images/article.png" alt="Article">
+            </button>
+            <button class="template-btn" data-template="journal">
+                <img src="../images/journal.png" alt="Journal">
+            </button>
+            <button class="template-btn" data-template="newspaper">
+                <img src="../images/newspaper.png" alt="Newspaper">
+            </button>
+        </div>
         </div>
         
         <!-- Right Column: Selected Text & Simplified Version -->

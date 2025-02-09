@@ -2,10 +2,32 @@
     font-family: Arial, sans-serif;
     width: 40rem;
   }
-  img {
-    max-width: 40%;
-    height: auto;
-  }  
+
+  .left-column > img {
+    width: 40%;
+  }
+  
+.template-btn {
+    background: none;    
+    border: none;   
+    padding: 0;    
+    margin: 0;         
+    display: flex;        
+    align-items: center;  
+    justify-content: center; 
+    cursor: pointer;   
+  }
+  
+  .template-btn:focus {
+    outline: none;
+  }
+    .template-btn img {
+    width: 120%;   
+    display: block; 
+    margin: 0;   
+  }
+  
+  
   .container {
     display: flex;
     height: 100vh;
@@ -20,7 +42,7 @@
   }
   .right-column {
     flex-grow: 1;
-    padding: 15px;
+    padding: 18px;
     box-sizing: border-box;
   }
   .template-item {
