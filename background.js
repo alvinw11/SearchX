@@ -1,135 +1,82 @@
-// Import the pre-created instance
-import { aiAssistant } from './ai.js';
+const extensions = 'https://developer.chrome.com/docs/extensions';
+const webstore = 'https://developer.chrome.com/docs/webstore';
 
-// Listen for installation
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Extension installed');
-});
 
-// Add secure storage function
-async function storeAPIKey(apiKey) {
-  try {
-    await chrome.storage.local.set({
-      'openai_api_key': apiKey
-    });
-    console.log('API key stored securely');
-    return true;
-  } catch (error) {
-    console.error('Failed to store API key:', error);
-    return false;
-  }
-}
-
-// Function to inject text into Stempad editor
-async function injectIntoStempad(tabId, text) {
-  console.log('Attempting to inject text:', text);
-  console.log('Into tab:', tabId);
-  try {
-    const result = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (noteText) => {
-        console.log('Injection script running in Stempad');
-        try {
-          // Try multiple possible editor selectors
-          const editor = 
-            document.querySelector('.scratchpad-editor') ||
-            document.querySelector('#editor') ||
-            document.querySelector('[contenteditable="true"]') ||
-            document.querySelector('.editor-container');
-            
-          console.log('Found editor element:', editor);
-          
-          if (!editor) {
-            throw new Error('Editor element not found - please make sure Stempad editor is loaded');
-          }
-
-          // Create a new text block
-          const textBlock = document.createElement('div');
-          textBlock.className = 'stempad-text-block';
-          textBlock.textContent = noteText;
-          
-          // Try different insertion methods
-          if (editor.isContentEditable) {
-            // If it's a contenteditable element
-            editor.innerHTML += `<div>${noteText}</div>`;
-          } else {
-            // Regular element
-            editor.appendChild(textBlock);
-          }
-          
-          console.log('Text successfully inserted');
-          return { success: true, message: 'Text inserted successfully' };
-        } catch (error) {
-          console.error('Injection error:', error);
-          return { 
-            success: false, 
-            error: error.message,
-            editorFound: !!document.querySelector('.scratchpad-editor')
-          };
-        }
-      },
-      args: [text]
-    });
-    
-    console.log('Injection script result:', result);
-    
-    if (result && result[0] && result[0].result) {
-      return result[0].result;
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+    if (request.action === "simplifyText") {
+      const apiKey = await getAPIKey();  // Step 2: Fetch the API key
+      const simplifiedText = await callChatGPT(request.text, apiKey);  // Step 3: Simplify text
+      
+      chrome.runtime.sendMessage({
+        type: 'simplifiedText',
+        text: simplifiedText,
+      }) 
     }
-    
-    return { success: false, error: 'No result from injection script' };
-  } catch (error) {
-    console.error('Injection failed:', error);
-    return { success: false, error: error.message };
-  }
-}
 
-// Listen for messages from content script or popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Received message:', request);
+    if (message.type === 'storeAPIKey') {
+            // Extract the API key from the message
+            const apiKey = message.apiKey;
+             // Store the API key in Chrome's local storage
+        chrome.storage.local.set({ apiKey: apiKey }, function() {
+        // Check if the storage was successful
+        if (chrome.runtime.lastError) {
+          // If there was an error, send a failure response
+          sendResponse({ success: false, message: chrome.runtime.lastError.message });
+        } else {
+          // If successful, send a success response
+          sendResponse({ success: true });
+        }
+    })
+    return true;  // Keeps the message channel open for async response
+  }});
 
-  if (request.type === 'simplifyText') {
-    // Use the AIAssistant instance to simplify text
-    aiAssistant.simplifyText(request.text)
-      .then(result => {
-        console.log('AI Simplification result:', result);
-        sendResponse(result);
-      })
-      .catch(error => {
-        console.error('AI Error:', error);
-        sendResponse({ success: false, error: error.message });
+  async function getAPIKey() {
+    try {
+      const result = await new Promise((resolve, reject) => {
+        chrome.storage.local.get(['apiKey'], (items) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(items.apiKey);
+          }
+        });
       });
-    return true; // Required for async response
-  }
-
-  if (request.type === 'getStatus') {
-    // Handle status check request
-    sendResponse({ status: 'active' });
-    return true;
-  }
-
-  if (request.type === 'storeAPIKey') {
-    storeAPIKey(request.apiKey)
-      .then(result => sendResponse({ success: result }));
-    return true;
-  }
-
-  if (request.type === 'insertNote') {
-    // Find Stempad editor tab
-    chrome.tabs.query({ url: 'https://www.stempad.com/editor*' }, async (tabs) => {
-      if (tabs.length === 0) {
-        sendResponse({ success: false, error: 'Stempad editor not found' });
-        return;
+  
+      if (result) {
+        return result;
+      } else {
+        console.error('No API key found in storage');
+        return null;
       }
+    } catch (error) {
+      console.error('Error fetching API key:', error.message);
+      return null;
+    }
+  }
+  
 
-      try {
-        const result = await injectIntoStempad(tabs[0].id, request.text);
-        sendResponse(result);
-      } catch (error) {
-        console.error('Error inserting note:', error);
-        sendResponse({ success: false, error: error.message });
-      }
+  //simplify the text input 
+  async function callChatGPT(selectedText, apiKey) {
+    const apiUrl = "https://api.openai.com/v1/completions";
+    const prompt = `Simplify this text: Make it less academic and easier to understand for non-academics:\n\n${selectedText}`;
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "text-davinci-003",
+        prompt: prompt,
+        max_tokens: 300,
+        temperature: 0.7
+      })
     });
-    return true; // Required for async response
+  
+    const data = await response.json();
+    return data.choices[0].text.trim();
   }
-}); 
+
+
+  
