@@ -1,0 +1,35 @@
+{
+    "manifest_version": 3,
+    "name": "SearchX",
+    "version": "1.0",
+    "description": "SearchX desctiption text goes here",
+    "icons": {
+      "16": "images/SearchX_icon.png",
+      "32": "images/SearchX_icon.png",
+      "48": "images/SearchX_icon.png",
+      "128": "images/SearchX_icon.png"
+    },
+    "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["scripts/content.js"],
+      "run_at": "document_end"
+    }
+    ],
+    "action": {
+        "default_popup": "popup/popup.html",
+        "default_icon": "images/SearchX_icon.png"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "permissions": [
+        "storage",
+        "activeTab",
+        "tabs"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ]
+}
