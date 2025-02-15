@@ -1,6 +1,4 @@
 console.log('Content script loaded and running');
-initializeTemplateSelector();
-
 // Add message listener for debug and other messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Content script received message:', message);
@@ -107,43 +105,7 @@ function formatText(text)
 {
     const selectedTemplate = localStorage.getItem('selectedTemplate') || 'default';
 
-    switch (selectedTemplate) 
-    {
-        case 'scientific':
-            return `Scientific Papers${text}`;
-        case 'article':
-            return `Articles ${text}`;
-        case 'newspaper':
-            return `Newspaper ${text}`;
-        default:
-            return text;
-    }
-}
-function initializeTemplateSelector() {
-    const selector = document.createElement('select');
-    selector.id = 'template-selector';
-    selector.style = "position: fixed; left: 10px; top: 20px; z-index: 10000; padding: 5px;";
-
-    const templates = {
-        default: "Default",
-        scientific: "Scientific",
-        article: "Article",
-        newspaper: "Newspaper",
-    };
-
-    for (const [value, label] of Object.entries(templates)) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        selector.appendChild(option);
-    }
-
-    selector.addEventListener('change', (e) => {
-        localStorage.setItem('selectedTemplate', e.target.value);
-        console.log('Template selected:', e.target.value);
-    });
-
-    document.body.appendChild(selector);
+    return text; 
 }
 
 // Add this function to create tooltips
