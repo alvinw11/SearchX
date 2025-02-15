@@ -1,11 +1,23 @@
 console.log('Content script loaded and running');
 // Add message listener for debug and other messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Content script received message:', message);
+    console.log('Message received:', message);
     if (message.type === 'debugTest') {
         console.log('Debug test received in content script');
         sendResponse({status: 'Content script is working!'});
     }
+    if (message.type === 'simplifiedText') {
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const x = rect.left + window.scrollX;
+        const y = rect.top + window.scrollY;
+        
+        console.log('Showing tooltip at:', { x, y, message: message.text });
+        showTextTooltip(message.text, x, y, 'simplifiedText');
+        sendResponse({success: true});
+    }
+    return true;
 });
 
 document.addEventListener('mouseup', async () => {
@@ -127,3 +139,23 @@ function showTooltip(message, type = 'success') {
     document.body.appendChild(tooltip);
     setTimeout(() => tooltip.remove(), 3000);
 }
+
+function showTextTooltip(message, x, y, type = 'simplifiedText') {
+    const tooltip = document.createElement('div');
+    tooltip.textContent = message;
+    tooltip.style.cssText = `
+        position: fixed;
+        top: ${y + 10}px;
+        left: ${x}px;
+        background: ${type === 'simplifiedText' ? '#FF69B4' : '#f44336'};
+        color: black;
+        border: 5px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 10000;
+    `;  
+    document.body.appendChild(tooltip);
+    document.addEventListener('click', () => tooltip.remove());
+    
+}
+   

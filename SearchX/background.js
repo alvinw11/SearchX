@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(simplifiedText => {
                 console.log('Text simplified, sending response:', simplifiedText);
                 
-                // Store the simplified text in storage
+                // Always store in local storage
                 chrome.storage.local.set({
                     'currentSimplification': simplifiedText,
                     'originalText': request.text
@@ -26,17 +26,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     console.log('Stored simplified text in storage');
                 });
 
-                // Try to send to popup if it's open
-                try {
-                    chrome.runtime.sendMessage({
-                        type: 'simplifiedText',
-                        text: simplifiedText,
-                    }).catch(() => {
-                        console.log('Popup not open, data stored in storage');
-                    });
-                } catch (error) {
-                    console.log('Popup not open, data stored in storage');
-                }
+                // Always send to content script, regardless of popup state
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    if (tabs[0]) {
+                        console.log('Sending simplified text to content script on tab:', tabs[0].id);
+                        chrome.tabs.sendMessage(tabs[0].id, {
+                            type: 'simplifiedText',
+                            text: simplifiedText
+                        }, response => {
+                            console.log('Response from content script:', response);
+                            if (chrome.runtime.lastError) {
+                                console.error('Error sending to content script:', chrome.runtime.lastError);
+                            }
+                        });
+                    } else {
+                        console.error('No active tab found');
+                    }
+                });
 
                 // Send response back to content script
                 sendResponse({ success: true, simplified: simplifiedText });
@@ -44,9 +50,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(error => {
                 console.error('Error in simplification:', error);
                 try {
-                    chrome.runtime.sendMessage({
-                        type: 'error',
-                        error: error.message
+                    console.log('Sending error message to content script:', error.message);
+                    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                        if (tabs[0]) {
+                            console.log('Sending to tab:', tabs[0].id);
+                            chrome.tabs.sendMessage(tabs[0].id, {
+                                type: 'error',
+                                error: error.message
+                            }, response => {
+                                console.log('Response from content script:', response);
+                                if (chrome.runtime.lastError) {
+                                    console.error('Error sending message:', chrome.runtime.lastError);
+                                }
+                            });
+                        } else {
+                            console.error('No active tab found');
+                        }
                     });
                 } catch (e) {
                     console.log('Popup not open to receive error');
