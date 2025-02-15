@@ -29,36 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load any stored simplification when popup opens
     loadStoredSimplification();
     
-    // // Import button event listener
-    // importBtn.addEventListener('click', async () => {
-    //   try {
-    //     // Check if a tab with the Stempad editor is already open.
-    //     const tabs = await chrome.tabs.query({ url: 'https://www.stempad.com/editor*' });
-    //     if (tabs.length === 0) {
-    //       // If no tab is found, show a status error message and open a new tab.
-    //       showStatus('Please open Stempad editor first', 'error');
-    //       chrome.tabs.create({ url: 'https://www.stempad.com/editor' });
-    //       return;
-    //     }
-    
-    //     // Send a message to the background script to insert the simplified text.
-    //     chrome.runtime.sendMessage({
-    //       type: 'insertNote',
-    //       text: simplifiedTextDiv.textContent
-    //     }, (response) => {
-    //       // Process the response from the background script.
-    //       if (response && response.success) {
-    //         showStatus('Text inserted into Stempad!', 'success');
-    //         clearSimplification();
-    //       } else {
-    //         showStatus('Failed to insert: ' + (response?.error || 'Unknown error'), 'error');
-    //       }
-    //     });
-    //   } catch (error) {
-    //     showStatus('Error: ' + error.message, 'error');
-    //   }
-    // });
-    
     // Discard button event listener
     discardBtn.addEventListener('click', () => {
       clearSimplification();
@@ -112,16 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Functions to enable/disable buttons
     function enableButtons() {
-      importBtn.disabled = false;
       discardBtn.disabled = false;
-      importBtn.style.opacity = '1';
       discardBtn.style.opacity = '1';
     }
     
     function disableButtons() {
-      importBtn.disabled = true;
       discardBtn.disabled = true;
-      importBtn.style.opacity = '0.5';
       discardBtn.style.opacity = '0.5';
     }
 

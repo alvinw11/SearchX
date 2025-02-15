@@ -1,13 +1,23 @@
 console.log('Content script loaded and running');
-initializeTemplateSelector();
-
 // Add message listener for debug and other messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Content script received message:', message);
+    console.log('Message received:', message);
     if (message.type === 'debugTest') {
         console.log('Debug test received in content script');
         sendResponse({status: 'Content script is working!'});
     }
+    if (message.type === 'simplifiedText') {
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const x = rect.left + window.scrollX;
+        const y = rect.top + window.scrollY;
+        
+        console.log('Showing tooltip at:', { x, y, message: message.text });
+        showTextTooltip(message.text, x, y, 'simplifiedText');
+        sendResponse({success: true});
+    }
+    return true;
 });
 
 document.addEventListener('mouseup', async () => {
@@ -107,43 +117,7 @@ function formatText(text)
 {
     const selectedTemplate = localStorage.getItem('selectedTemplate') || 'default';
 
-    switch (selectedTemplate) 
-    {
-        case 'scientific':
-            return `Scientific Papers${text}`;
-        case 'article':
-            return `Articles ${text}`;
-        case 'newspaper':
-            return `Newspaper ${text}`;
-        default:
-            return text;
-    }
-}
-function initializeTemplateSelector() {
-    const selector = document.createElement('select');
-    selector.id = 'template-selector';
-    selector.style = "position: fixed; left: 10px; top: 20px; z-index: 10000; padding: 5px;";
-
-    const templates = {
-        default: "Default",
-        scientific: "Scientific",
-        article: "Article",
-        newspaper: "Newspaper",
-    };
-
-    for (const [value, label] of Object.entries(templates)) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        selector.appendChild(option);
-    }
-
-    selector.addEventListener('change', (e) => {
-        localStorage.setItem('selectedTemplate', e.target.value);
-        console.log('Template selected:', e.target.value);
-    });
-
-    document.body.appendChild(selector);
+    return text; 
 }
 
 // Add this function to create tooltips
@@ -165,3 +139,23 @@ function showTooltip(message, type = 'success') {
     document.body.appendChild(tooltip);
     setTimeout(() => tooltip.remove(), 3000);
 }
+
+function showTextTooltip(message, x, y, type = 'simplifiedText') {
+    const tooltip = document.createElement('div');
+    tooltip.textContent = message;
+    tooltip.style.cssText = `
+        position: fixed;
+        top: ${y + 10}px;
+        left: ${x}px;
+        background: ${type === 'simplifiedText' ? '#FF69B4' : '#f44336'};
+        color: black;
+        border: 5px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 10000;
+    `;  
+    document.body.appendChild(tooltip);
+    document.addEventListener('click', () => tooltip.remove());
+    
+}
+   
