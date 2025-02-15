@@ -82,16 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Functions to enable/disable buttons
     function enableButtons() {
-      importBtn.disabled = false;
       discardBtn.disabled = false;
-      importBtn.style.opacity = '1';
       discardBtn.style.opacity = '1';
     }
     
     function disableButtons() {
-      importBtn.disabled = true;
       discardBtn.disabled = true;
-      importBtn.style.opacity = '0.5';
       discardBtn.style.opacity = '0.5';
     }
 
