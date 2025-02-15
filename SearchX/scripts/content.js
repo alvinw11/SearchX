@@ -147,13 +147,15 @@ function showTextTooltip(message, x, y, type = 'simplifiedText') {
         position: fixed;
         top: ${y + 10}px;
         left: ${x}px;
-        background: ${type === 'simplifiedText' ? '#4CAF50' : '#f44336'};
-        color: white;
+        background: ${type === 'simplifiedText' ? '#FF69B4' : '#f44336'};
+        color: black;
+        border: 5px solid #ccc;
         padding: 10px;
         border-radius: 5px;
         z-index: 10000;
     `;  
     document.body.appendChild(tooltip);
-    setTimeout(() => tooltip.remove(), 3000);
+    document.addEventListener('click', () => tooltip.remove());
+    
 }
    
