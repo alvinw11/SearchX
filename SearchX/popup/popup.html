@@ -16,25 +16,7 @@
     </div>
 
     <div id="main-content" style="display: none;">
-
       <div class="container">
-        <!-- Left Column: Template Selection -->
-        <div class="left-column">
-          <img src="../images/SearchX_icon.png" alt="icon">
-          <h3>Templates</h3>
-          <div class="template-buttons">
-            <button class="template-btn" data-template="article">
-                <img src="../images/article.png" alt="Article">
-            </button>
-            <button class="template-btn" data-template="journal">
-                <img src="../images/journal.png" alt="Journal">
-            </button>
-            <button class="template-btn" data-template="newspaper">
-                <img src="../images/newspaper.png" alt="Newspaper">
-            </button>
-        </div>
-        </div>
-        
         <!-- Right Column: Selected Text & Simplified Version -->
         <div class="right-column">
           <div class="section">
@@ -54,11 +36,15 @@
                 <button class="action-btn" id="discardBtn">
                     <img src="../images/discard.png" alt="Discard">
                 </button>
+                <label class="switch">
+                  <input type="checkbox" id="OnOff">
+                  <span class="slider round"></span>
+                </label>
             </div>
           </div>
         </div>
-        <div id="status"></div>
       </div>
+      <button id="openPdfSite" style="margin-top: 10px;">Open PDF Reader</button>
     </div>
       <script src="popup.js"></script>
     <button id="debugButton" style="margin-top: 10px;">Test Connection</button>

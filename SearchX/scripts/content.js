@@ -113,12 +113,7 @@ async function showSimplifiedText(text)
 
 
 }
-function formatText(text) 
-{
-    const selectedTemplate = localStorage.getItem('selectedTemplate') || 'default';
 
-    return text; 
-}
 
 // Add this function to create tooltips
 function showTooltip(message, type = 'success') {
@@ -141,18 +136,31 @@ function showTooltip(message, type = 'success') {
 }
 
 function showTextTooltip(message, x, y, type = 'simplifiedText') {
+    console.log('Showing text tooltip:', { message, x, y, type });
+    
+    // Remove any existing tooltips
+    const existingTooltip = document.querySelector('.text-tooltip');
+    if (existingTooltip) {
+        existingTooltip.remove();
+    }
+
     const tooltip = document.createElement('div');
     tooltip.textContent = message;
     tooltip.style.cssText = `
-        position: fixed;
-        top: ${y + 10}px;
+        position: absolute;
+        top: ${y-50}px;
         left: ${x}px;
         background: ${type === 'simplifiedText' ? '#FF69B4' : '#f44336'};
-        color: black;
+        color: black
         border: 5px solid #ccc;
         padding: 10px;
         border-radius: 5px;
-        z-index: 10000;
+        z-index: 999999;
+        max-width: 300px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        pointer-events: auto;
     `;  
     document.body.appendChild(tooltip);
     document.addEventListener('click', () => tooltip.remove());
