@@ -1,0 +1,72 @@
+#searchx-floating-toggle {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 25px;
+    padding: 5px 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 999999;
+    cursor: default;
+    border: 1px solid #ccc;
+}
+
+#searchx-floating-toggle .drag-handle {
+    text-align: center;
+    cursor: move;
+    color: #666;
+    user-select: none;
+    font-size: 14px;
+}
+
+#searchx-floating-toggle .toggle-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#searchx-floating-toggle .toggle-icon:hover {
+    background: #f0f0f0;
+}
+
+#searchx-mode-selector {
+    position: fixed;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 999998;
+    border: 1px solid #ccc;
+}
+
+.mode-option {
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.mode-option:hover {
+    background: #f0f0f0;
+}
+
+.mode-option.active {
+    background: #e0e0e0;
+} 
