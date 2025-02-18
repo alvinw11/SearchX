@@ -1,7 +1,65 @@
 const extensions = 'https://developer.chrome.com/docs/extensions';
 const webstore = 'https://developer.chrome.com/docs/webstore';
 
+// Centralized error handling function
+function handleError(error, tabs) {
+    console.error('Error:', error);
+    if (tabs && tabs[0]) {
+        sendMessageToTab(tabs[0].id, {
+            type: 'error',
+            error: error.message
+        });
+    }
+    return { success: false, error: error.message };
+}
 
+// Centralized tab message sending function
+function sendMessageToTab(tabId, message) {
+    chrome.tabs.sendMessage(tabId, message, response => {
+        console.log('Response from content script:', response);
+        if (chrome.runtime.lastError) {
+            console.error('Error sending message:', chrome.runtime.lastError);
+        }
+    });
+}
+
+let currentMode = 'simplify';
+let currentLength = 'medium';
+let currentLanguage = 'en';
+
+//Message listener for the toggle bar
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'setMode') {
+        currentMode = request.mode;
+        sendResponse({ success: true });
+    }
+    if (request.action === 'setLength') {
+        currentLength = request.length;
+        sendResponse({ success: true });
+    }
+    if (request.action === 'setLanguage') {
+        currentLanguage = request.language;
+        sendResponse({ success: true });
+    }
+});
+
+
+
+function getPrompt() {
+    let prompt = '';
+    if (currentMode === 'summarize') {
+        prompt = `Summarize this text: Make it less academic and easier to understand for non-academics, also translate it into English if applicable:\n\n${selectedText}`;
+    }
+    if (currentMode === 'explain') {
+        prompt = `I don't understand this text:\n"${selectedText}"\n Explain it to me in the context of the web page` ;
+    }
+    if (currentMode === 'lookUp') {
+        prompt = `The highlighted text is a term, person, place or concept. Provide a definition for the term, basic biografic information of a the person, a description of the place, or an explanation of the concept, depending on the context.\n\n${selectedText}`;
+    }
+    return prompt;
+}
+
+// Main message listener with cleaned up structure
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Background received message:', request);
 
@@ -18,29 +76,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(simplifiedText => {
                 console.log('Text simplified, sending response:', simplifiedText);
                 
-                // Always store in local storage
+                // Store in local storage
                 chrome.storage.local.set({
                     'currentSimplification': simplifiedText,
                     'originalText': request.text
-                }, () => {
-                    console.log('Stored simplified text in storage');
                 });
 
-                // Always send to content script, regardless of popup state
+                // Send to active tab
                 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
                     if (tabs[0]) {
-                        console.log('Sending simplified text to content script on tab:', tabs[0].id);
-                        chrome.tabs.sendMessage(tabs[0].id, {
+                        sendMessageToTab(tabs[0].id, {
                             type: 'simplifiedText',
                             text: simplifiedText
-                        }, response => {
-                            console.log('Response from content script:', response);
-                            if (chrome.runtime.lastError) {
-                                console.error('Error sending to content script:', chrome.runtime.lastError);
-                            }
                         });
-                    } else {
-                        console.error('No active tab found');
                     }
                 });
 
@@ -48,95 +96,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, simplified: simplifiedText });
             })
             .catch(error => {
-                console.error('Error in simplification:', error);
-                try {
-                    console.log('Sending error message to content script:', error.message);
-                    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                        if (tabs[0]) {
-                            console.log('Sending to tab:', tabs[0].id);
-                            chrome.tabs.sendMessage(tabs[0].id, {
-                                type: 'error',
-                                error: error.message
-                            }, response => {
-                                console.log('Response from content script:', response);
-                                if (chrome.runtime.lastError) {
-                                    console.error('Error sending message:', chrome.runtime.lastError);
-                                }
-                            });
-                        } else {
-                            console.error('No active tab found');
-                        }
-                    });
-                } catch (e) {
-                    console.log('Popup not open to receive error');
-                }
-                sendResponse({ success: false, error: error.message });
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    handleError(error, tabs);
+                });
+                sendResponse(handleError(error));
             });
         return true; // Keep message channel open for async response
     }
 
-    // Handle storeAPIKey action
-    if (request.type === 'storeAPIKey') {
-        if (!request.apiKey) {
-            sendResponse({ success: false, message: 'No API key provided' });
-            return true;
-        }
-
-        chrome.storage.local.set({ apiKey: request.apiKey }, () => {
-            if (chrome.runtime.lastError) {
-                sendResponse({ success: false, message: chrome.runtime.lastError.message });
-            } else {
-                sendResponse({ success: true });
-            }
-        });
-        return true;
-    }
-
-    // Modify the message listener to handle API key validation
-    if (request.action === "checkAPIKey") {
-        getAPIKey()
-            .then(apiKey => {
-                sendResponse({ 
-                    isValid: Boolean(apiKey),
-                    message: apiKey ? 'Valid API key found' : 'No valid API key found'
-                });
-            })
-            .catch(error => {
-                sendResponse({ 
-                    isValid: false, 
-                    message: error.message 
-                });
-            });
+    // Handle API key operations
+    if (request.type === 'storeAPIKey' || request.action === "checkAPIKey") {
+        handleAPIKeyOperation(request, sendResponse);
         return true;
     }
 });
 
-async function getAPIKey() {
+// Centralized API key operations
+async function handleAPIKeyOperation(request, sendResponse) {
     try {
-        const result = await new Promise((resolve, reject) => {
-            chrome.storage.local.get(['apiKey'], (items) => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve(items.apiKey);
-                }
+        if (request.type === 'storeAPIKey') {
+            if (!request.apiKey) {
+                throw new Error('No API key provided');
+            }
+            await chrome.storage.local.set({ apiKey: request.apiKey });
+            sendResponse({ success: true });
+        } 
+        else if (request.action === "checkAPIKey") {
+            const apiKey = await getAPIKey();
+            sendResponse({ 
+                isValid: Boolean(apiKey),
+                message: apiKey ? 'Valid API key found' : 'No valid API key found'
             });
-        });
-
-        // Add validation for the API key format
-        if (result && result.length > 20) {  // Basic validation for API key
-            return result;
-        } else {
-            throw new Error('Invalid or missing API key');
         }
     } catch (error) {
-        console.error('Error fetching API key:', error.message);
-        chrome.runtime.sendMessage({
-            type: 'apiKeyError',
-            error: error.message
+        sendResponse({ 
+            success: false, 
+            isValid: false,
+            message: error.message 
         });
-        return null;
     }
+}
+
+async function getAPIKey() {
+    const result = await chrome.storage.local.get(['apiKey']);
+    if (!result.apiKey || result.apiKey.length < 20) {
+        throw new Error('Invalid or missing API key');
+    }
+    return result.apiKey;
 }
 
 //simplify the text input 

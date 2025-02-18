@@ -166,4 +166,9 @@ function showTextTooltip(message, x, y, type = 'simplifiedText') {
     document.addEventListener('click', () => tooltip.remove());
     
 }
+
+
+
+
+
    
