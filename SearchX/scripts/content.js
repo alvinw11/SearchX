@@ -148,18 +148,19 @@ function showTextTooltip(message, x, y, type = 'simplifiedText') {
     tooltip.textContent = message;
     tooltip.style.cssText = `
         position: absolute;
-        top: ${y-50}px;
+        top: ${y - 50}px;
         left: ${x}px;
-        background: ${type === 'simplifiedText' ? '#FF69B4' : '#f44336'};
-        color: black
-        border: 5px solid #ccc;
-        padding: 10px;
-        border-radius: 5px;
-        z-index: 999999;
-        max-width: 300px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        
+        background: rgba(255, 255, 255, 0.9);
+        color: black;
+        border: 2px solid #ccc;
+        padding: 8px;
+        border-radius: 8px;
+        z-index: 9999;
+        max-width: 250px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         font-family: Arial, sans-serif;
-        font-size: 18px;
+        font-size: 16px;
         pointer-events: auto;
     `;  
     document.body.appendChild(tooltip);
@@ -171,4 +172,14 @@ function showTextTooltip(message, x, y, type = 'simplifiedText') {
 
 
 
+const pageTitle = document.title; // Get the title of the page
+const paragraphs = Array.from(document.querySelectorAll('p')).map(p => p.innerText); // Get all paragraph text
+
+
+// You can send this data to the background script or process it further
+chrome.runtime.sendMessage({
+    action: 'contextData',
+    title: pageTitle,
+    paragraphs: paragraphs
+});
    

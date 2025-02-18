@@ -62,14 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     
-    // Function to display status messages
-    function showStatus(message, type) {
-      statusDiv.textContent = message;
-      statusDiv.style.color = type === 'error' ? '#f44336' : '#4CAF50';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-      }, 3000);
-    }
     
     // Function to clear stored simplification data
     function clearSimplification() {

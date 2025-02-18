@@ -23,11 +23,13 @@ function sendMessageToTab(tabId, message) {
     });
 }
 
-let currentMode = 'simplify';
+let currentMode = 'explain';
 let currentLength = 'medium';
 let currentLanguage = 'en';
+let pageTitle = '';
+let paragraphs = [];
 
-//Message listener for the toggle bar
+//Message listener for the prompt settings
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'setMode') {
         currentMode = request.mode;
@@ -41,23 +43,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         currentLanguage = request.language;
         sendResponse({ success: true });
     }
+    if (request.action === 'contextData') {
+        pageTitle = request.title;
+        paragraphs = request.paragraphs;
+        sendResponse({ success: true});
+    }
 });
 
-
-
-function getPrompt() {
-    let prompt = '';
-    if (currentMode === 'summarize') {
-        prompt = `Summarize this text: Make it less academic and easier to understand for non-academics, also translate it into English if applicable:\n\n${selectedText}`;
-    }
-    if (currentMode === 'explain') {
-        prompt = `I don't understand this text:\n"${selectedText}"\n Explain it to me in the context of the web page` ;
-    }
-    if (currentMode === 'lookUp') {
-        prompt = `The highlighted text is a term, person, place or concept. Provide a definition for the term, basic biografic information of a the person, a description of the place, or an explanation of the concept, depending on the context.\n\n${selectedText}`;
-    }
-    return prompt;
-}
 
 // Main message listener with cleaned up structure
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -71,7 +63,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     throw new Error('No API key found');
                 }
                 console.log('API key found, calling ChatGPT');
-                return callChatGPT(request.text, apiKey);
+                return callChatGPT(request.text, apiKey, currentLanguage, currentMode, currentLength);
             })
             .then(simplifiedText => {
                 console.log('Text simplified, sending response:', simplifiedText);
@@ -145,11 +137,18 @@ async function getAPIKey() {
     return result.apiKey;
 }
 
+
+
+
+
+
+
 //simplify the text input 
-async function callChatGPT(selectedText, apiKey) {
+async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, currentLength) {
     const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
-    const prompt = `Simplify this text: Make it less academic and easier to understand for non-academics, also translate it into English if applicable:\n\n${selectedText}`;
-    
+    const prompt = `You are a helpful assistant to someone reading text on a web page.
+    Your answer should only ${currentMode} this text:${selectedText} and answer in the ${currentLanguage} language. The length of the answer should be ${currentLength}, but it should never be longer than 50 words.`;
+
     try {
         const response = await fetch(apiUrl, {
             method: "POST",
