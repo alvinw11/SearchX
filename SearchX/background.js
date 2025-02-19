@@ -1,6 +1,14 @@
 const extensions = 'https://developer.chrome.com/docs/extensions';
 const webstore = 'https://developer.chrome.com/docs/webstore';
 
+// Track if extension is enabled (default to true)
+let isEnabled = true;
+
+// Initialize enabled state from storage
+chrome.storage.local.get(['isEnabled'], function(result) {
+    isEnabled = result.isEnabled !== false;
+});
+
 // Centralized error handling function
 function handleError(error, tabs) {
     console.error('Error:', error);
@@ -55,7 +63,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Background received message:', request);
 
+    // Handle enable/disable updates
+    if (request.action === "updateEnabled") {
+        isEnabled = request.isEnabled;
+        chrome.storage.local.set({ isEnabled: isEnabled });
+        sendResponse({ success: true });
+        return;
+    }
+
     if (request.action === "simplifyText") {
+        // If extension is disabled, silently ignore the request
+        if (!isEnabled) {
+            sendResponse({ success: false, disabled: true });
+            return true;
+        }
+
         console.log('Processing simplifyText request');
         getAPIKey()
             .then(apiKey => {
@@ -99,7 +121,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Handle API key operations
     if (request.type === 'storeAPIKey' || request.action === "checkAPIKey") {
         handleAPIKeyOperation(request, sendResponse);
-        return true;
+        return true; // Keep message channel open for async response
     }
 });
 
@@ -114,13 +136,14 @@ async function handleAPIKeyOperation(request, sendResponse) {
             sendResponse({ success: true });
         } 
         else if (request.action === "checkAPIKey") {
-            const apiKey = await getAPIKey();
+            const result = await chrome.storage.local.get(['apiKey']);
             sendResponse({ 
-                isValid: Boolean(apiKey),
-                message: apiKey ? 'Valid API key found' : 'No valid API key found'
+                isValid: Boolean(result.apiKey && result.apiKey.length >= 20),
+                message: result.apiKey ? 'Valid API key found' : 'No valid API key found'
             });
         }
     } catch (error) {
+        console.error('API key operation error:', error);
         sendResponse({ 
             success: false, 
             isValid: false,
@@ -136,12 +159,6 @@ async function getAPIKey() {
     }
     return result.apiKey;
 }
-
-
-
-
-
-
 
 //simplify the text input 
 async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, currentLength) {
@@ -179,6 +196,3 @@ async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, c
         throw new Error('Failed to simplify text: ' + error.message);
     }
 }
-
-
-  

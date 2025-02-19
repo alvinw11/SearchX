@@ -1,4 +1,5 @@
 console.log('Content script loaded and running');
+
 // Add message listener for debug and other messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Message received:', message);
@@ -43,6 +44,9 @@ document.addEventListener('mouseup', async () => {
             if (response && response.success) {
                 // Show success tooltip
                 showTooltip('Text is being simplified! Open the extension to see results.', 'success');
+            } else if (response && response.disabled) {
+                // Extension is disabled, do nothing
+                console.log('Extension is disabled, ignoring selection');
             } else if (response && response.error) {
                 console.error('Error from background:', response.error);
                 showTooltip('Error: ' + response.error, 'error');
@@ -182,4 +186,3 @@ chrome.runtime.sendMessage({
     title: pageTitle,
     paragraphs: paragraphs
 });
-   
