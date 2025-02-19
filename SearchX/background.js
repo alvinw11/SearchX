@@ -20,53 +20,57 @@ function sendMessageToTab(tabId, message) {
         if (chrome.runtime.lastError) {
             console.error('Error sending message:', chrome.runtime.lastError);
         }
+        else {
+            console.log('Message sent successfully');
+        }
     });
 }
 
+let pageTitle = '';
+let paragraphs = [];
 let currentMode = 'explain';
 let currentLength = 'medium';
 let currentLanguage = 'en';
-let pageTitle = '';
-let paragraphs = [];
 
-//Message listener for the prompt settings
+// Message listener for incoming messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Background received message:', request);
+
     if (request.action === 'setMode') {
         currentMode = request.mode;
-        sendResponse({ success: true });
+        chrome.storage.local.set({ currentMode });
     }
     if (request.action === 'setLength') {
         currentLength = request.length;
-        sendResponse({ success: true });
+        chrome.storage.local.set({ currentLength });
     }
     if (request.action === 'setLanguage') {
         currentLanguage = request.language;
-        sendResponse({ success: true });
+        chrome.storage.local.set({ currentLanguage });
     }
+    
     if (request.action === 'contextData') {
         pageTitle = request.title;
         paragraphs = request.paragraphs;
-        sendResponse({ success: true});
     }
-});
 
-
-// Main message listener with cleaned up structure
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('Background received message:', request);
+// Restore settings on script load
+    chrome.storage.local.get(["currentMode", "currentLength", "currentLanguage"], (result) => {
+        currentMode = result.currentMode || "explain";
+        currentLength = result.currentLength || "medium";
+        currentLanguage = result.currentLanguage || "en";
+    });
 
     if (request.action === "simplifyText") {
         console.log('Processing simplifyText request');
         getAPIKey()
             .then(apiKey => {
-                if (!apiKey) {
-                    throw new Error('No API key found');
-                }
+                if (!apiKey) throw new Error('No API key found');
                 console.log('API key found, calling ChatGPT');
                 return callChatGPT(request.text, apiKey, currentLanguage, currentMode, currentLength);
             })
             .then(simplifiedText => {
-                console.log('Text simplified, sending response:', simplifiedText);
+                console.log('Text simplified:', simplifiedText);
                 
                 // Store in local storage
                 chrome.storage.local.set({
@@ -75,7 +79,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
 
                 // Send to active tab
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                     if (tabs[0]) {
                         sendMessageToTab(tabs[0].id, {
                             type: 'simplifiedText',
@@ -84,24 +88,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     }
                 });
 
-                // Send response back to content script
                 sendResponse({ success: true, simplified: simplifiedText });
             })
             .catch(error => {
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                    handleError(error, tabs);
-                });
-                sendResponse(handleError(error));
+                console.error("ChatGPT Error:", error);
+                sendResponse({ success: false, message: error.message });
             });
+
         return true; // Keep message channel open for async response
     }
-
-    // Handle API key operations
-    if (request.type === 'storeAPIKey' || request.action === "checkAPIKey") {
-        handleAPIKeyOperation(request, sendResponse);
-        return true;
-    }
 });
+
+
 
 // Centralized API key operations
 async function handleAPIKeyOperation(request, sendResponse) {
@@ -139,15 +137,42 @@ async function getAPIKey() {
 
 
 
-
-
-
-
 //simplify the text input 
-async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, currentLength) {
+async function callChatGPT(selectedText, apiKey, language, mode, length) {
+    
     const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
-    const prompt = `You are a helpful assistant to someone reading text on a web page.
-    Your answer should only ${currentMode} this text:${selectedText} and answer in the ${currentLanguage} language. The length of the answer should be ${currentLength}, but it should never be longer than 50 words.`;
+    const prompt = `You are a helpful assistant for someone reading a text on a web page. Your task is to carefully analyze the text content and send the user a message with the information they need. Follow these detailed instructions: 
+        1. Context Identification:(Do not include this in your response!!!!)
+           - Title of the page: ${pageTitle}
+           - Content of the page: ${paragraphs}
+           Look for the general context of the page. You will consider this context in your response
+
+        2. Always respond in the following language: - ${language}
+
+        3. Response Format:(Do not include this in your response!!!!)
+           - If ${mode} is "explain", you will explain what the text is saying in the context of the page for someone who doesn't currently understand the text so your response should be dumbing it down.
+           - If ${mode} is "summarize", you will summarize the text, including the most important information which you decide on based on the context of the page.
+           - If ${mode} is "lookup", you will give explain what or who ${selectedText} is.
+                        -If ${selectedText} doesn't seem to be a name, institution, event, place, or thing or an abbreviation or acronym relevant to the context of the page then you will respond only with the text: "Look-up not applicable, try a different mode"
+
+        4. Length of the response:(Do not include this in your response!!!!)
+            - If ${length} is equal to "shortest", the response should be at most 20 words.
+            - If ${length} is equal to "shorter", the response should be at most 30 words.
+            - If ${length} is equal to "medium", the response should be at most 50 words.
+            - If ${length} is equal to "longer", the response should be at most 70 words.
+            - If ${length} is equal to "longest", the response should be at most 100 words.
+
+
+        5. If the highlighted text is longer than 700 words, then you will respond only with: "This text is too long, try highlighting a shorter portion"
+
+        6. Do not include any part of this prompt in your response. THIS IS VERY IMPORTANT. Your response should sound as if it was coming from a human assistant, pretend you are a human talking to another human.
+
+         FOLLOW EVERY SINGLE INSTRUCTION TO THE TEEEEE
+        7. STOP FUCKING INCLUDING "SUMMARIZE" or other references to the mode or prompt in your response. Pleaseeeee IM BEGGING YOU.
+        Here is the text:
+        ${selectedText}`;
+    console.log(prompt);
+
 
     try {
         const response = await fetch(apiUrl, {
