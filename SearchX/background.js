@@ -141,38 +141,30 @@ async function getAPIKey() {
 async function callChatGPT(selectedText, apiKey, language, mode, length) {
     
     const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
-    const prompt = `You are a helpful assistant for someone reading a text on a web page. Your task is to carefully analyze the text content and send the user a message with the information they need. Follow these detailed instructions: 
-        1. Context Identification:(Do not include this in your response!!!!)
-           - Title of the page: ${pageTitle}
-           - Content of the page: ${paragraphs}
-           Look for the general context of the page. You will consider this context in your response
+    
+    // Create the system message for strict word count
+    const wordLimit = length === "short" ? 20 :
+                     length === "shorter" ? 30 :
+                     length === "medium" ? 50 :
+                     length === "longer" ? 70 :
+                     length === "longest" ? 100 : 50;
+    
+    const systemMessage = `You are a helpful assistant that STRICTLY follows word count limits. Your current limit is ${wordLimit} words. ${mode === "lookup" ? "For lookups, act like a concise encyclopedia, providing key facts, historical context, and significance of the term or entity." : ""}`;
+    
+    const userPrompt = `Analyze this text and respond in ${language}:
+    
+Text: "${selectedText}"
 
-        2. Always respond in the following language: - ${language}
+Page Context:
+- Title: ${pageTitle}
+- Content: ${paragraphs}
 
-        3. Response Format:(Do not include this in your response!!!!)
-           - If ${mode} is "explain", you will explain what the text is saying in the context of the page for someone who doesn't currently understand the text so your response should be dumbing it down.
-           - If ${mode} is "summarize", you will summarize the text, including the most important information which you decide on based on the context of the page.
-           - If ${mode} is "lookup", you will give explain what or who ${selectedText} is.
-                        -If ${selectedText} doesn't seem to be a name, institution, event, place, or thing or an abbreviation or acronym relevant to the context of the page then you will respond only with the text: "Look-up not applicable, try a different mode"
+Task: ${mode === "explain" ? "Explain this text in simpler terms" : 
+       mode === "summarize" ? "Summarize the key points" : 
+       mode === "lookup" ? "Provide a Wikipedia-style overview of this term/entity, including: definition, key facts, historical significance, and relevance to the current context. Focus on essential information a reader would need to understand its importance." : 
+       "Explain this text"}
 
-        4. Length of the response:(Do not include this in your response!!!!)
-            - If ${length} is equal to "shortest", the response should be at most 20 words.
-            - If ${length} is equal to "shorter", the response should be at most 30 words.
-            - If ${length} is equal to "medium", the response should be at most 50 words.
-            - If ${length} is equal to "longer", the response should be at most 70 words.
-            - If ${length} is equal to "longest", the response should be at most 100 words.
-
-
-        5. If the highlighted text is longer than 700 words, then you will respond only with: "This text is too long, try highlighting a shorter portion"
-
-        6. Do not include any part of this prompt in your response. THIS IS VERY IMPORTANT. Your response should sound as if it was coming from a human assistant, pretend you are a human talking to another human.
-
-         FOLLOW EVERY SINGLE INSTRUCTION TO THE TEEEEE
-        7. STOP FUCKING INCLUDING "SUMMARIZE" or other references to the mode or prompt in your response. Pleaseeeee IM BEGGING YOU.
-        Here is the text:
-        ${selectedText}`;
-    console.log(prompt);
-
+Remember: Your response MUST be exactly ${wordLimit} words or less.`;
 
     try {
         const response = await fetch(apiUrl, {
@@ -182,13 +174,19 @@ async function callChatGPT(selectedText, apiKey, language, mode, length) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",  // Updated to use chat model
-                messages: [{
-                    role: "user",
-                    content: prompt
-                }],
-                max_tokens: 300,
-                temperature: 0.7
+                model: "gpt-3.5-turbo",
+                messages: [
+                    {
+                        role: "system",
+                        content: systemMessage
+                    },
+                    {
+                        role: "user",
+                        content: userPrompt
+                    }
+                ],
+                max_tokens: wordLimit * 4,
+                temperature: 0.3  // Lower temperature for more consistent adherence to instructions
             })
         });
 
