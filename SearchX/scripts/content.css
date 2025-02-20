@@ -26,19 +26,18 @@
 #searchx-floating-toggle .toggle-icon {
     width: 35px;
     height: 35px;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: white;
+    background: transparent;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
     font-size: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #searchx-floating-toggle .toggle-icon:hover {
-    background: #f0f0f0;
+    background: transparent;
+    transform: scale(1.1);
 }
 
 #searchx-mode-selector {
@@ -58,13 +57,14 @@
     padding: 8px 15px;
     cursor: pointer;
     border-radius: 10px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
     white-space: nowrap;
     text-align: center;
 }
 
 .mode-option:hover {
     background: #f0f0f0;
+    transform: scale(1.05);
 }
 
 .mode-option.active {
@@ -89,13 +89,14 @@
     padding: 8px 15px;
     cursor: pointer;
     border-radius: 10px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
     white-space: nowrap;
     text-align: center;
 }
 
 .length-option:hover {
     background: #f0f0f0;
+    transform: scale(1.05);
 }
 
 .length-option.active {
@@ -120,13 +121,14 @@
     padding: 8px 15px;
     cursor: pointer;
     border-radius: 10px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
     white-space: nowrap;
     text-align: center;
 }
 
 .language-option:hover {
     background: #f0f0f0;
+    transform: scale(1.05);
 }
 
 .language-option.active {
@@ -147,4 +149,24 @@
 
 .language-option.hidden {
     display: none;
+}
+
+/* Add hover scaling to all option elements */
+.mode-option:hover,
+.length-option:hover,
+.language-option:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+/* Add transition for smooth scaling */
+.mode-option,
+.length-option,
+.language-option {
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background-color 0.2s, transform 0.2s;
+    white-space: nowrap;
+    text-align: center;
 } 

@@ -172,9 +172,65 @@ function showTextTooltip(message, x, y, type = 'simplifiedText') {
     
 }
 
+function setupDropdownBehavior() {
+    const dropdowns = [
+        document.getElementById('searchx-mode-selector'),
+        document.getElementById('length-selector'),
+        document.getElementById('searchx-language-selector')
+    ];
 
+    // Close all dropdowns
+    function closeAllDropdowns() {
+        dropdowns.forEach(dropdown => {
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
 
+    // Add click handlers to all option elements
+    document.querySelectorAll('.mode-option, .length-option, .language-option').forEach(option => {
+        option.addEventListener('click', () => {
+            // Find the parent dropdown and close it
+            const parentDropdown = option.closest('#searchx-mode-selector, #length-selector, #searchx-language-selector');
+            if (parentDropdown) {
+                parentDropdown.style.display = 'none';
+            }
+        });
+    });
 
+    // When clicking any toggle icon
+    document.querySelectorAll('.toggle-icon').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            const targetDropdown = document.getElementById(toggle.getAttribute('data-target'));
+            if (!targetDropdown) return;
+
+            // Check if clicking the same dropdown that's currently open
+            const isSameDropdownOpen = targetDropdown.style.display === 'flex';
+            
+            // First close all dropdowns
+            closeAllDropdowns();
+            
+            // Only open the new dropdown if it wasn't the one that was just open
+            if (!isSameDropdownOpen) {
+                targetDropdown.style.display = 'flex';
+            }
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#searchx-floating-toggle') && 
+            !e.target.closest('#searchx-mode-selector') && 
+            !e.target.closest('#length-selector') && 
+            !e.target.closest('#searchx-language-selector')) {
+            closeAllDropdowns();
+        }
+    });
+}
+
+// Call this function after your elements are created
+setupDropdownBehavior();
 
 const pageTitle = document.title; // Get the title of the page
 const paragraphs = Array.from(document.querySelectorAll('p')).map(p => p.innerText); // Get all paragraph text
