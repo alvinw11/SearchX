@@ -162,9 +162,20 @@ async function getAPIKey() {
 
 //simplify the text input 
 async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, currentLength) {
-    const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
-    const prompt = `You are a helpful assistant to someone reading text on a web page.
-    Your answer should only ${currentMode} this text:${selectedText} and answer in the ${currentLanguage} language. The length of the answer should be ${currentLength}, but it should never be longer than 50 words.`;
+    const apiUrl = "https://api.openai.com/v1/chat/completions";
+    
+    // Get user role from storage
+    const result = await chrome.storage.local.get(['userName']);
+    const userRole = result.userName || 'reader';
+    
+    const prompt = `You are a helpful assistant to a ${userRole} reading text on a web page.
+    Tailor your response specifically for someone with this background/role. For example, if they're a historian, focus on historical context and implications.
+    If they're a student, focus on clear explanations and key concepts. If they're a researcher, emphasize methodology and academic relevance.
+    
+    Your task is to ${currentMode} this text: "${selectedText}" and respond in ${currentLanguage}.
+    The length should be ${currentLength}, but never exceed 50 words.
+    
+    Make your response specifically valuable for a ${userRole} by highlighting aspects most relevant to their perspective.`;
 
     try {
         const response = await fetch(apiUrl, {
@@ -174,8 +185,11 @@ async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, c
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",  // Updated to use chat model
+                model: "gpt-3.5-turbo",
                 messages: [{
+                    role: "system",
+                    content: `You are an expert assistant specializing in providing insights for ${userRole}s.`
+                }, {
                     role: "user",
                     content: prompt
                 }],
