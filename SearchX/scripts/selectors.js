@@ -86,12 +86,21 @@ function createLanguageSelector() {
     
     // Add languages
     const languages = [
-        { code: 'en', name: 'English' },
-        { code: 'es', name: 'Spanish' },
-        { code: 'fr', name: 'French' },
-        { code: 'de', name: 'German' },
-        { code: 'it', name: 'Italian' },
-        { code: 'pt', name: 'Portuguese' },
+        { code: 'English', name: 'English' },
+        { code: 'Spanish', name: 'Spanish' },
+        { code: 'French', name: 'French' },
+        { code: 'German', name: 'German' },
+        { code: 'Italian', name: 'Italian' },
+        { code: 'Portuguese', name: 'Portuguese' },
+        { code: 'Chinese', name: 'Chinese' },
+        { code: 'Japanese', name: 'Japanese' },
+        { code: 'Korean', name: 'Korean' },
+        { code: 'Russian', name: 'Russian' },
+        { code: 'Arabic', name: 'Arabic' },
+        { code: 'Hindi', name: 'Hindi' },
+        { code: 'Dutch', name: 'Dutch' },
+        { code: 'Swedish', name: 'Swedish' },
+        { code: 'Turkish', name: 'Turkish' }
     ];
 
     languages.forEach(lang => {

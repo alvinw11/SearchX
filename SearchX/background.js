@@ -161,21 +161,50 @@ async function getAPIKey() {
 }
 
 //simplify the text input 
-async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, currentLength) {
-    const apiUrl = "https://api.openai.com/v1/chat/completions";
+async function callChatGPT(selectedText, apiKey, language, mode, length) {
+    
+    const apiUrl = "https://api.openai.com/v1/chat/completions";  // Updated to chat completions endpoint
     
     // Get user role from storage
     const result = await chrome.storage.local.get(['userName']);
     const userRole = result.userName || 'reader';
     
-    const prompt = `You are a helpful assistant to a ${userRole} reading text on a web page.
-    Tailor your response specifically for someone with this background/role. For example, if they're a historian, focus on historical context and implications.
-    If they're a student, focus on clear explanations and key concepts. If they're a researcher, emphasize methodology and academic relevance.
+    // Create the system message for strict word count
+    const wordLimit = length === "short" ? 20 :
+                     length === "shorter" ? 30 :
+                     length === "medium" ? 50 :
+                     length === "longer" ? 70 :
+                     length === "longest" ? 100 : 50;
     
-    Your task is to ${currentMode} this text: "${selectedText}" and respond in ${currentLanguage}.
-    The length should be ${currentLength}, but never exceed 50 words.
+    const systemMessage = `CRITICAL INSTRUCTION: You MUST respond ONLY in ${language}. Any response in a different language is a failure.
+You are a helpful assistant that STRICTLY follows word count limits and specializes in providing insights for the who is ${userRole}. Your current limit is ${wordLimit} words. 
+${mode === "lookup" ? `For lookups, you are a specialized encyclopedia:
+1. For short selections (1-3 words): Provide a comprehensive encyclopedia entry about the term, concept, or entity.
+2. For longer selections: First identify the main concepts/entities in the text, then provide an encyclopedic overview focusing on the most significant one.
+3. Include: definition, key facts, historical context, and significance.
+4. Structure: Start with a clear definition, then provide key details.` : 
+ mode === "summarize" ? "For summaries, maintain a consistent, objective style regardless of user role. Focus on key points, main ideas, and crucial details." :
+ mode === "explain" ? "For explanations, tailor your response specifically to the user's background and expertise level." : ""}`;
     
-    Make your response specifically valuable for a ${userRole} by highlighting aspects most relevant to their perspective.`;
+    const userPrompt = `RESPOND ONLY IN ${language.toUpperCase()}. ANY OTHER LANGUAGE IS NOT ACCEPTABLE.
+
+
+Analyze this text:
+
+Text: "${selectedText}"
+
+Page Context:
+- Title: ${pageTitle}
+- Content: ${paragraphs}
+
+Task: ${mode === "explain" ? `Explain this text in terms that would be most meaningful to a ${userRole}. Consider their background, expertise level, and specific interests.` : 
+       mode === "summarize" ? "Provide an objective summary of the key points and main ideas, maintaining a consistent style regardless of the reader." : 
+       mode === "lookup" ? "Provide a Wikipedia-style overview of this term/entity, including: definition, key facts, historical significance, and relevance to the current context." : 
+       "Explain this text"}
+
+STRICT REQUIREMENTS:
+1. Language: YOU ARE ONLY ALLOWED TO respond in ${language}
+2. Word Count: EXACTLY ${wordLimit} words or less`;
 
     try {
         const response = await fetch(apiUrl, {
@@ -186,15 +215,18 @@ async function callChatGPT(selectedText, apiKey, currentLanguage, currentMode, c
             },
             body: JSON.stringify({
                 model: "gpt-3.5-turbo",
-                messages: [{
-                    role: "system",
-                    content: `You are an expert assistant specializing in providing insights for ${userRole}s.`
-                }, {
-                    role: "user",
-                    content: prompt
-                }],
-                max_tokens: 300,
-                temperature: 0.7
+                messages: [
+                    {
+                        role: "system",
+                        content: systemMessage
+                    },
+                    {
+                        role: "user",
+                        content: userPrompt
+                    }
+                ],
+                max_tokens: wordLimit * 4,
+                temperature: 0.3  // Lower temperature for more consistent adherence to instructions
             })
         });
 
