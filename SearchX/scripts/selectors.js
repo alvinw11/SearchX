@@ -8,10 +8,54 @@ function createToggleBarUI() {
     toggleBar.id = 'searchx-floating-toggle';
     toggleBar.innerHTML = `
         <div class="drag-handle">⋮⋮</div>
-        <div class="toggle-icon" data-action="mode">🔄</div>
-        <div class="toggle-icon" data-action="length">⚙️</div>
-        <div class="toggle-icon" data-action="language">🌐</div>
+        <div class="toggle-icon" data-action="mode" data-tooltip="Switch Mode">🔄</div>
+        <div class="toggle-icon" data-action="length" data-tooltip="Adjust Length">⚙️</div>
+        <div class="toggle-icon" data-action="language" data-tooltip="Select Language">🌐</div>
     `;
+
+    // Add tooltip functionality
+    const icons = toggleBar.querySelectorAll('.toggle-icon');
+    icons.forEach(icon => {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = icon.dataset.tooltip;
+        icon.appendChild(tooltip);
+
+        icon.addEventListener('mouseenter', () => {
+            // Calculate position
+            const iconRect = icon.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const isOnRightSide = iconRect.right > window.innerWidth / 2;
+
+            // Remove existing position classes
+            tooltip.classList.remove('left', 'right');
+            
+            // Add appropriate position class
+            if (isOnRightSide) {
+                tooltip.classList.add('left');
+            } else {
+                tooltip.classList.add('right');
+            }
+
+            tooltip.classList.add('visible');
+        });
+
+        icon.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+        });
+
+        // Hide tooltip on click
+        icon.addEventListener('click', () => {
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    // Hide all tooltips when clicking anywhere
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.tooltip').forEach(tooltip => {
+            tooltip.classList.remove('visible');
+        });
+    });
 
     // Add everything to the document
     document.body.appendChild(modeSelector);

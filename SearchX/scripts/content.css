@@ -177,4 +177,37 @@
     transition: background-color 0.2s, transform 0.2s;
     white-space: nowrap;
     text-align: center;
+}
+
+/* Add tooltip styles */
+.tooltip {
+    position: absolute;
+    background: rgb(255, 255, 255);
+    border: 1px solid #0f172a;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none;
+    z-index: 1000000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Position tooltips on either side */
+.tooltip.right {
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.tooltip.left {
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.tooltip.visible {
+    opacity: 1;
 } 
