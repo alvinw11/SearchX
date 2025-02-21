@@ -3,24 +3,32 @@
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(255, 255, 255);
     border-radius: 25px;
     padding: 5px 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2),
+                0 0 15px rgba(30, 41, 59, 0.4);
     display: flex;
     flex-direction: column;
     gap: 15px;
     z-index: 999999;
-    cursor: default;
-    border: 1px solid #ccc;
+    cursor: move;
+    border: 2px solid #0f172a;
+    user-select: none;
+    touch-action: none;
 }
 
 #searchx-floating-toggle .drag-handle {
     text-align: center;
-    cursor: move;
     color: #666;
     user-select: none;
     font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 #searchx-floating-toggle .toggle-icon {
@@ -42,7 +50,7 @@
 
 #searchx-mode-selector {
     position: fixed;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(255, 255, 255);
     border-radius: 15px;
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -74,7 +82,7 @@
 /* Length Selector Styles */
 #length-selector {
     position: fixed;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(255, 255, 255);
     border-radius: 15px;
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -106,7 +114,7 @@
 /* Language Selector Styles */
 #searchx-language-selector {
     position: fixed;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(255, 255, 255);
     border-radius: 15px;
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);

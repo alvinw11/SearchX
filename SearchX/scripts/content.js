@@ -179,6 +179,8 @@ function setupDropdownBehavior() {
         document.getElementById('searchx-language-selector')
     ];
 
+    let currentOpenDropdown = null; // Track currently open dropdown
+
     // Close all dropdowns
     function closeAllDropdowns() {
         dropdowns.forEach(dropdown => {
@@ -186,18 +188,8 @@ function setupDropdownBehavior() {
                 dropdown.style.display = 'none';
             }
         });
+        currentOpenDropdown = null;
     }
-
-    // Add click handlers to all option elements
-    document.querySelectorAll('.mode-option, .length-option, .language-option').forEach(option => {
-        option.addEventListener('click', () => {
-            // Find the parent dropdown and close it
-            const parentDropdown = option.closest('#searchx-mode-selector, #length-selector, #searchx-language-selector');
-            if (parentDropdown) {
-                parentDropdown.style.display = 'none';
-            }
-        });
-    });
 
     // When clicking any toggle icon
     document.querySelectorAll('.toggle-icon').forEach(toggle => {
@@ -205,16 +197,18 @@ function setupDropdownBehavior() {
             const targetDropdown = document.getElementById(toggle.getAttribute('data-target'));
             if (!targetDropdown) return;
 
-            // Check if clicking the same dropdown that's currently open
-            const isSameDropdownOpen = targetDropdown.style.display === 'flex';
-            
-            // First close all dropdowns
-            closeAllDropdowns();
-            
-            // Only open the new dropdown if it wasn't the one that was just open
-            if (!isSameDropdownOpen) {
-                targetDropdown.style.display = 'flex';
+            // If clicking the same toggle that's already open, just close it
+            if (targetDropdown === currentOpenDropdown) {
+                closeAllDropdowns();
+                return;
             }
+
+            // Close any open dropdown first
+            closeAllDropdowns();
+
+            // Open the new dropdown
+            targetDropdown.style.display = 'flex';
+            currentOpenDropdown = targetDropdown;
         });
     });
 
@@ -226,6 +220,13 @@ function setupDropdownBehavior() {
             !e.target.closest('#searchx-language-selector')) {
             closeAllDropdowns();
         }
+    });
+
+    // Add click handlers to all option elements
+    document.querySelectorAll('.mode-option, .length-option, .language-option').forEach(option => {
+        option.addEventListener('click', () => {
+            closeAllDropdowns();
+        });
     });
 }
 
@@ -242,3 +243,114 @@ chrome.runtime.sendMessage({
     title: pageTitle,
     paragraphs: paragraphs
 });
+
+function setupDraggable() {
+    const floatingToggle = document.getElementById('searchx-floating-toggle');
+    const dropdowns = [
+        document.getElementById('searchx-mode-selector'),
+        document.getElementById('length-selector'),
+        document.getElementById('searchx-language-selector')
+    ];
+    if (!floatingToggle) return;
+
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    function dragStart(e) {
+        if (e.target.classList.contains('toggle-icon')) return;
+
+        initialX = e.type === "mousedown" ? e.clientX : e.touches[0].clientX;
+        initialY = e.type === "mousedown" ? e.clientY : e.touches[0].clientY;
+
+        if (e.target === floatingToggle) {
+            isDragging = true;
+        }
+    }
+
+    function dragEnd(e) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
+
+    function updateDropdownPositions() {
+        dropdowns.forEach(dropdown => {
+            if (dropdown && dropdown.style.display === 'flex') {
+                // Calculate position relative to toggle bar
+                const toggleRect = floatingToggle.getBoundingClientRect();
+                const isOnRightSide = toggleRect.right > window.innerWidth / 2;
+
+                if (isOnRightSide) {
+                    dropdown.style.right = (window.innerWidth - toggleRect.left + 10) + 'px';
+                    dropdown.style.left = 'auto';
+                } else {
+                    dropdown.style.left = (toggleRect.right + 10) + 'px';
+                    dropdown.style.right = 'auto';
+                }
+                dropdown.style.top = toggleRect.top + 'px';
+            }
+        });
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+
+            const clientX = e.type === "mousemove" ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === "mousemove" ? e.clientY : e.touches[0].clientY;
+
+            currentX = clientX - initialX;
+            currentY = clientY - initialY;
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            // Calculate new position
+            const rect = floatingToggle.getBoundingClientRect();
+            let newX = rect.left + currentX;
+            let newY = rect.top + currentY;
+
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Constrain to viewport bounds with padding
+            const padding = 1;
+            newX = Math.min(Math.max(padding, newX), viewportWidth - rect.width - padding);
+            newY = Math.min(Math.max(padding, newY), viewportHeight - rect.height - padding);
+
+            // Apply new position to toggle bar
+            floatingToggle.style.left = `${newX}px`;
+            floatingToggle.style.top = `${newY}px`;
+            floatingToggle.style.right = 'auto';
+            floatingToggle.style.transform = 'none';
+
+            // Update dropdown positions
+            updateDropdownPositions();
+
+            // Reset for next movement
+            initialX = clientX;
+            initialY = clientY;
+            currentX = 0;
+            currentY = 0;
+        }
+    }
+
+    // Mouse events
+    floatingToggle.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    // Touch events
+    floatingToggle.addEventListener('touchstart', dragStart);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('touchend', dragEnd);
+}
+
+// Add this to your existing setupDropdownBehavior function or call separately
+setupDraggable();
