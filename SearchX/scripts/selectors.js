@@ -8,10 +8,54 @@ function createToggleBarUI() {
     toggleBar.id = 'searchx-floating-toggle';
     toggleBar.innerHTML = `
         <div class="drag-handle">⋮⋮</div>
-        <div class="toggle-icon" data-action="mode">🔄</div>
-        <div class="toggle-icon" data-action="length">⚙️</div>
-        <div class="toggle-icon" data-action="language">✖️</div>
+        <div class="toggle-icon" data-action="mode" data-tooltip="Switch Mode">🔄</div>
+        <div class="toggle-icon" data-action="length" data-tooltip="Adjust Length">⚙️</div>
+        <div class="toggle-icon" data-action="language" data-tooltip="Select Language">🌐</div>
     `;
+
+    // Add tooltip functionality
+    const icons = toggleBar.querySelectorAll('.toggle-icon');
+    icons.forEach(icon => {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = icon.dataset.tooltip;
+        icon.appendChild(tooltip);
+
+        icon.addEventListener('mouseenter', () => {
+            // Calculate position
+            const iconRect = icon.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const isOnRightSide = iconRect.right > window.innerWidth / 2;
+
+            // Remove existing position classes
+            tooltip.classList.remove('left', 'right');
+            
+            // Add appropriate position class
+            if (isOnRightSide) {
+                tooltip.classList.add('left');
+            } else {
+                tooltip.classList.add('right');
+            }
+
+            tooltip.classList.add('visible');
+        });
+
+        icon.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+        });
+
+        // Hide tooltip on click
+        icon.addEventListener('click', () => {
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    // Hide all tooltips when clicking anywhere
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.tooltip').forEach(tooltip => {
+            tooltip.classList.remove('visible');
+        });
+    });
 
     // Add everything to the document
     document.body.appendChild(modeSelector);
@@ -28,39 +72,69 @@ setupToggleBarInteractions(elements);//takes those elements and uses them in the
 // Handle all toggle bar interactions
 function setupToggleBarInteractions(elements) {
     const { toggleBar, modeSelector, lengthSelector, languageSelector } = elements;
+    let currentOpenDropdown = null;
+
+    // Close all dropdowns
+    function closeAllDropdowns() {
+        [modeSelector, lengthSelector, languageSelector].forEach(dropdown => {
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+        currentOpenDropdown = null;
+    }
 
     // Click handler for toggle icons
     toggleBar.addEventListener('click', (e) => {
         const icon = e.target.closest('.toggle-icon');
         if (!icon) return;
 
+        let targetDropdown;
         switch(icon.dataset.action) {
             case 'mode':
-                positionModeSelector();
+                targetDropdown = modeSelector;
                 break;
             case 'length':
-                positionLengthSelector();
+                targetDropdown = lengthSelector;
                 break;
             case 'language':
-                positionLanguageSelector();
+                targetDropdown = languageSelector;
                 break;
         }
+
+        if (!targetDropdown) return;
+
+        // If clicking the same toggle that's already open, just close it
+        if (targetDropdown === currentOpenDropdown) {
+            closeAllDropdowns();
+            return;
+        }
+
+        // Close any open dropdown first
+        closeAllDropdowns();
+
+        // Open the new dropdown and position it
+        targetDropdown.style.display = 'flex';
+        currentOpenDropdown = targetDropdown;
+        calculateSelectorPosition(toggleBar, targetDropdown);
     });
 
     // Close selectors when clicking outside
     document.addEventListener('click', (e) => {
-        if (!toggleBar.contains(e.target)) {
-            modeSelector.style.display = 'none';
-            lengthSelector.style.display = 'none';
-            languageSelector.style.display = 'none';
+        if (!toggleBar.contains(e.target) && 
+            !modeSelector.contains(e.target) && 
+            !lengthSelector.contains(e.target) && 
+            !languageSelector.contains(e.target)) {
+            closeAllDropdowns();
         }
     });
 
-    // Setup drag functionality
-    const dragHandle = toggleBar.querySelector('.drag-handle');
-    dragHandle.addEventListener('mousedown', dragStart);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', dragEnd);
+    // Add click handlers to all options
+    document.querySelectorAll('.mode-option, .length-option, .language-option').forEach(option => {
+        option.addEventListener('click', () => {
+            closeAllDropdowns();
+        });
+    });
 }
 
 // Function to create and manage language selector
@@ -228,7 +302,6 @@ function createModeSelector() {
 Positioning functions for the toggleBar and its selectors
 Positioning functions are used to determine where the toggleBar and its selectors should be placed on the screen.
 They are called when the toggleBar is clicked and when the user clicks outside the toggleBar.
-The drag functionality is also implemented here. It is called when the user clicks and drags the toggleBar.
 */
 function calculateSelectorPosition(toggleBar, selector) {
     const toggleBarRect = toggleBar.getBoundingClientRect();
