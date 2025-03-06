@@ -39,6 +39,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             action: "updateEnabled", 
             isEnabled: isEnabled 
         });
+
+        // Send message to content script
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: "updateEnabled",
+                    isEnabled: isEnabled
+                }).catch(error => {
+                    console.log("Could not send message to content script:", error);
+                });
+            }
+        });
     }
 
     // Check if API key exists and update UI accordingly
@@ -103,14 +115,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Function to show error messages
     function showError(message) {
+        // Only log to console, no UI feedback
         console.error(message);
-        // You can add UI feedback here if needed
     }
 
     // Function to show status messages
     function showStatus(message, type) {
+        // Only log to console, no UI feedback
         console.log(message);
-        // You can add UI feedback here if needed
     }
 
     // Add debug button functionality
@@ -121,13 +133,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 chrome.tabs.sendMessage(tabs[0].id, {type: 'testConnection'}, function(response) {
                     if (chrome.runtime.lastError) {
                         console.error(chrome.runtime.lastError);
-                        showError('Connection failed: ' + chrome.runtime.lastError.message);
                     } else {
-                        console.log('Test response:', response);
-                        showStatus('Connection successful!', 'success');
+                        console.log('Connection successful');
                     }
                 });
             });
         });
     }
+
 });
