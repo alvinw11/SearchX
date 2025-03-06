@@ -42,14 +42,13 @@ document.addEventListener('mouseup', async () => {
         }, response => {
             console.log('Message sent to background, response:', response);
             if (response && response.success) {
-                // Show success tooltip
-                showTooltip('Text is being simplified! Open the extension to see results.', 'success');
+                // Just log success, no tooltip needed
+                console.log('Text is being simplified');
             } else if (response && response.disabled) {
                 // Extension is disabled, do nothing
                 console.log('Extension is disabled, ignoring selection');
             } else if (response && response.error) {
                 console.error('Error from background:', response.error);
-                showTooltip('Error: ' + response.error, 'error');
             }
         });
         
@@ -58,27 +57,10 @@ document.addEventListener('mouseup', async () => {
             'originalText': selectedText
         }, () => {
             console.log('Original text stored in local storage');
-            
-            // Create visual feedback for user
-            const tooltip = document.createElement('div');
-            tooltip.textContent = 'Text selected! Check the extension popup.';
-            tooltip.style.cssText = `
-                position: fixed;
-                top: ${window.scrollY + 10}px;
-                right: 10px;
-                background: #4CAF50;
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                z-index: 10000;
-            `;
-            document.body.appendChild(tooltip);
-            setTimeout(() => tooltip.remove(), 2000);
         });
 
     } catch (error) {
         console.error('Error in content script:', error);
-        showTooltip('Error sending text for simplification', 'error');
     }
 });
 
@@ -113,30 +95,6 @@ async function showSimplifiedText(text)
         tooltip.style.left = `${rect.left - parentElement.getBoundingClientRect().left + 10}px`;
         tooltip.style.top = `${rect.top - parentElement.getBoundingClientRect().top}px`;
     }
-
-
-
-}
-
-
-// Add this function to create tooltips
-function showTooltip(message, type = 'success') {
-    const tooltip = document.createElement('div');
-    tooltip.textContent = message;
-    tooltip.style.cssText = `
-        position: fixed;
-        top: ${window.scrollY + 10}px;
-        right: 10px;
-        background: ${type === 'success' ? '#4CAF50' : '#f44336'};
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        z-index: 10000;
-        max-width: 300px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    `;
-    document.body.appendChild(tooltip);
-    setTimeout(() => tooltip.remove(), 3000);
 }
 
 function showTextTooltip(message, x, y, type = 'simplifiedText') {

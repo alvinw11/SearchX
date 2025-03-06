@@ -2,6 +2,54 @@ const modeSelector = createModeSelector();
 const lengthSelector = createLengthSelector();
 const languageSelector = createLanguageSelector()
 
+let isEnabled = true; // Track enabled state
+
+// Initialize state from storage
+chrome.storage.local.get(['isEnabled'], function(result) {
+    isEnabled = result.isEnabled !== false; // Default to true if not set
+    updateUIState(isEnabled);
+});
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "updateEnabled") {
+        isEnabled = message.isEnabled;
+        updateUIState(isEnabled);
+        sendResponse({ success: true });
+    }
+});
+
+function updateUIState(enabled) {
+    const toggleBar = document.getElementById('searchx-floating-toggle');
+    if (toggleBar) {
+        toggleBar.style.display = enabled ? 'flex' : 'none';
+    }
+    
+    // Close all dropdowns when disabled
+    if (!enabled) {
+        closeAllDropdowns();
+    }
+}
+
+// Add text selection handler
+document.addEventListener('mouseup', function(e) {
+    if (!isEnabled) return; // Ignore text selection when disabled
+    
+    const selectedText = window.getSelection().toString().trim();
+    if (selectedText) {
+        // Process the selected text only if extension is enabled
+        handleSelectedText(selectedText);
+    }
+});
+
+function handleSelectedText(text) {
+    // Only send the message to process the text, no UI feedback needed
+    chrome.runtime.sendMessage({
+        action: 'processSelectedText',
+        text: text
+    });
+}
+
 // Create and display the toggle bar UI
 function createToggleBarUI() {
     const toggleBar = document.createElement('div');
