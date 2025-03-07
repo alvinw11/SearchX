@@ -116,6 +116,7 @@ function createToggleBarUI() {
 
 const elements = createToggleBarUI(); //creates the toggle bar and its elements by calling the function
 setupToggleBarInteractions(elements);//takes those elements and uses them in the function to set up the interactions
+setupDraggable(elements); // Setup draggable functionality for the toggle bar
 
 // Handle all toggle bar interactions
 function setupToggleBarInteractions(elements) {
@@ -383,41 +384,111 @@ function positionLanguageSelector() {
     languageSelector.style.display = languageSelector.style.display === 'none' ? 'flex' : 'none';
 }
 
-// Drag functionality variables
-let isDragging = false;
-let currentX;
-let currentY;
-let initialX;
-let initialY;
-let xOffset = 0;
-let yOffset = 0;
-
-// Drag functionality
-function dragStart(e) {
+// Function to make the toggle bar draggable
+function setupDraggable(elements) {
     const { toggleBar } = elements;
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-    isDragging = true;
-}
+    const dropdowns = [
+        document.getElementById('searchx-mode-selector'),
+        document.getElementById('length-selector'),
+        document.getElementById('searchx-language-selector')
+    ];
+    if (!toggleBar) return;
 
-function drag(e) {
-    if (isDragging) {
-        const { toggleBar } = elements;
-        e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
-        xOffset = currentX;
-        yOffset = currentY;
-        setTranslate(currentX, currentY, toggleBar);
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    function dragStart(e) {
+        if (e.target.classList.contains('toggle-icon')) return;
+
+        initialX = e.type === "mousedown" ? e.clientX : e.touches[0].clientX;
+        initialY = e.type === "mousedown" ? e.clientY : e.touches[0].clientY;
+
+        if (e.target === toggleBar || e.target.closest('.drag-handle')) {
+            isDragging = true;
+        }
     }
-}
 
-function dragEnd() {
-    initialX = currentX;
-    initialY = currentY;
-    isDragging = false;
-}
+    function dragEnd(e) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
 
-function setTranslate(xPos, yPos, el) {
-    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+    function updateDropdownPositions() {
+        dropdowns.forEach(dropdown => {
+            if (dropdown && dropdown.style.display === 'flex') {
+                // Calculate position relative to toggle bar
+                const toggleRect = toggleBar.getBoundingClientRect();
+                const isOnRightSide = toggleRect.right > window.innerWidth / 2;
+
+                if (isOnRightSide) {
+                    dropdown.style.right = (window.innerWidth - toggleRect.left + 10) + 'px';
+                    dropdown.style.left = 'auto';
+                } else {
+                    dropdown.style.left = (toggleRect.right + 10) + 'px';
+                    dropdown.style.right = 'auto';
+                }
+                dropdown.style.top = toggleRect.top + 'px';
+            }
+        });
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+
+            const clientX = e.type === "mousemove" ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === "mousemove" ? e.clientY : e.touches[0].clientY;
+
+            currentX = clientX - initialX;
+            currentY = clientY - initialY;
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            // Calculate new position
+            const rect = toggleBar.getBoundingClientRect();
+            let newX = rect.left + currentX;
+            let newY = rect.top + currentY;
+
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Constrain to viewport bounds with padding
+            const padding = 1;
+            newX = Math.min(Math.max(padding, newX), viewportWidth - rect.width - padding);
+            newY = Math.min(Math.max(padding, newY), viewportHeight - rect.height - padding);
+
+            // Apply new position to toggle bar
+            toggleBar.style.left = `${newX}px`;
+            toggleBar.style.top = `${newY}px`;
+            toggleBar.style.right = 'auto';
+            toggleBar.style.transform = 'none';
+
+            // Update dropdown positions
+            updateDropdownPositions();
+
+            // Reset for next movement
+            initialX = clientX;
+            initialY = clientY;
+            currentX = 0;
+            currentY = 0;
+        }
+    }
+
+    // Mouse events
+    toggleBar.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    // Touch events
+    toggleBar.addEventListener('touchstart', dragStart);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('touchend', dragEnd);
 } 
