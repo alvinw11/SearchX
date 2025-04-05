@@ -1,13 +1,13 @@
 {
     "manifest_version": 3,
-    "name": "SearchX",
+    "name": "CrystalClear",
     "version": "1.0",
-    "description": "SearchX desctiption text goes here",
+    "description": "CrystalClear desctiption text goes here",
     "icons": {
-      "16": "images/SearchX_icon.png",
-      "32": "images/SearchX_icon.png",
-      "48": "images/SearchX_icon.png",
-      "128": "images/SearchX_icon.png"
+      "16": "images/Logo.png",
+      "32": "images/Logo.png",
+      "48": "images/Logo.png",
+      "128": "images/Logo.png"
     },
     "content_scripts": [
     {
@@ -19,7 +19,7 @@
     ],
     "action": {
         "default_popup": "popup/popup.html",
-        "default_icon": "images/SearchX_icon.png"
+        "default_icon": "images/Logo.png"
     },
     "background": {
         "service_worker": "background.js",
