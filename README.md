@@ -1,5 +1,5 @@
-# SearchX
-SearchX is a Chrome extension that simplifies academic or complex text into more understandable language using the ChatGPT API. This repository contains the necessary files, including manifest.json, the popup, content and background files and all images required to display the extension properly.
+# CrystalClear 1.0
+Crystal Clear is a Chrome extension that simplifies academic or complex text into more understandable language using the ChatGPT API. This repository contains the necessary files, including manifest.json, the popup, content and background files and all images required to display the extension properly.
 
 Features:
   Simplify and translate Academic Text: Highlights and simplifies complex text on web pages.
@@ -16,7 +16,7 @@ Installation:
 
 Usage
   Highlight any text on a webpage.
-  Click the SearchX extension icon.
+  Click the Crystal Clear extension icon.
   The text will be simplified using the ChatGPT API and displayed in the popup.
   
 Configuration
